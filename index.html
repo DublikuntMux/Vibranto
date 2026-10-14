@@ -71,15 +71,21 @@
   <h1>Vibranto</h1>
   <button id="vibeBtn" type="button">START</button>
   <div id="status">Tap to start infinite vibration</div>
-  <p class="sub">Works on Android Chrome. iOS Safari does not support the Vibration API.</p>
+  <p class="sub">Works on Android Chrome and iOS Safari 18+.</p>
 </main>
+<script type="module">
+  // iOS Safari 18+ polyfill for navigator.vibrate.
+  // On other browsers this is a no-op (native API is used).
+  // Main-thread blocking extends the iOS 18.4+ click grant so the
+  // vibration can keep looping after the tap that started it.
+  import { enableMainThreadBlocking } from 'https://esm.sh/ios-vibrator-pro-max@3.0.3';
+  enableMainThreadBlocking(true);
+</script>
 <script>
   const btn = document.getElementById('vibeBtn');
   const status = document.getElementById('status');
   let vibrating = false;
   let intervalId = null;
-
-  const supported = 'vibrate' in navigator;
 
   function startVibration() {
     // Keep the vibration going "infinitely" by re-triggering it on an interval.
@@ -108,7 +114,8 @@
   }
 
   btn.addEventListener('click', () => {
-    if (!supported) {
+    // Checked at click time so the async iOS polyfill has a chance to load.
+    if (typeof navigator.vibrate !== 'function') {
       status.textContent = 'Vibration API not supported on this device/browser';
       return;
     }
